@@ -7,7 +7,7 @@ export default function SiteFooter() {
     <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-12">
       <div className="grid md:grid-cols-[1.3fr_1fr_1fr_1.1fr] gap-10">
         <div>
-          <button onClick={() => navigate('landing')} className="rounded-lg bg-white px-2 py-1.5 mb-5" aria-label="Go to CarbonConnect homepage"><img src="/carbon-connect-logo.jpg" alt="CarbonConnect" className="h-8 w-auto max-w-[175px] object-contain" /></button>
+          <button onClick={() => navigate('landing')} className="inline-flex rounded-xl bg-white px-3 py-2.5 mb-5 shadow-sm" aria-label="Go to CarbonConnect homepage"><img src="/carbon-connect-logo-transparent.png" alt="CarbonConnect" className="h-10 w-auto max-w-[210px] object-contain" /></button>
           <p className="text-sm leading-relaxed text-[#D7E4D8] max-w-xs">Carbon-Connect is a marketplace layer for discovering, specifying, contracting and moving physical CO₂.</p>
           <p className="text-xs leading-relaxed text-[#B9D0BC] mt-4">Physical CO₂ transactions only. Carbon credits, offsets and certificates are separate instruments.</p>
         </div>
