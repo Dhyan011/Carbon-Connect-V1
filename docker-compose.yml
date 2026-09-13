@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: carbon_connect
+      POSTGRES_USER: carbon
+      POSTGRES_PASSWORD: carbon_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - carbon_connect_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U carbon -d carbon_connect"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - carbon_connect_redis:/data
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: carbon
+      MINIO_ROOT_PASSWORD: carbon_dev_password
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - carbon_connect_minio:/data
+volumes:
+  carbon_connect_pg:
+  carbon_connect_redis:
+  carbon_connect_minio:
