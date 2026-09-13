@@ -14,7 +14,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export async function login(email: string, password: string, role: Exclude<Role, null>) {
-  const result = await request<{ token: string; user: { role: Exclude<Role, null> } }>('/auth/login', { method: 'POST', body: JSON.stringify({ email, password, role }) });
+  const result = await request<{ token: string; user: { id: string; role: Exclude<Role, null> } }>('/auth/login', { method: 'POST', body: JSON.stringify({ email, password, role }) });
+  setApiToken(result.token); return result.user;
+}
+export async function loginWithGoogle(credential: string, role: Exclude<Role, null>) {
+  const result = await request<{ token: string; user: { id: string; email: string; role: Exclude<Role, null>; organizationId: string; firstName?: string | null; lastName?: string | null } }>('/auth/google', { method: 'POST', body: JSON.stringify({ credential, role }) });
   setApiToken(result.token); return result.user;
 }
 export async function loadRfqs() { return request<Rfq[]>('/rfqs'); }
