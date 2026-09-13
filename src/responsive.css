@@ -1,0 +1,34 @@
+/* Responsive composition layer: keeps the existing page hierarchy while preventing dense surfaces from collapsing. */
+@media (max-width:1024px){
+  .grid-cols-5{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .grid-cols-4{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .grid-cols-3{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .col-span-2{grid-column:span 2 / span 2;}
+  .max-w-screen-xl{max-width:100%;}
+  .page-shell{padding-left:1.5rem;padding-right:1.5rem;}
+}
+@media (max-width:640px){
+  .grid-cols-5,.grid-cols-4,.grid-cols-3,.grid-cols-2{grid-template-columns:minmax(0,1fr);}
+  .col-span-2{grid-column:span 1 / span 1;}
+  .grid-cols-7{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:1.25rem;}
+  .grid-cols-6{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .grid-cols-6 > .col-span-2{grid-column:span 2 / span 2;}
+  .grid-cols-3.gap-8,.grid-cols-3.gap-6,.grid-cols-3.gap-4{gap:1rem;}
+  .px-6{padding-left:1rem;padding-right:1rem;}
+  .page-shell{padding-left:1rem;padding-right:1rem;}
+  .py-8{padding-top:1.5rem;padding-bottom:1.5rem;}
+  .p-6{padding:1.25rem;}
+  .p-5{padding:1.125rem;}
+  .text-5xl{font-size:2.75rem;line-height:1.05;}
+  .text-3xl{font-size:1.9rem;line-height:1.15;}
+  .text-2xl{font-size:1.55rem;line-height:1.2;}
+  .text-xl{font-size:1.35rem;line-height:1.25;}
+  .section-header-responsive{align-items:stretch;}
+  .section-header-responsive > div:last-child{width:100%;}
+  .section-header-responsive > div:last-child > .flex{flex-wrap:wrap;}
+  .section-header-responsive button{max-width:100%;}
+  .section-header-responsive h2{font-size:1.35rem;}
+  .grid-cols-3 .col-span-2{grid-column:span 1 / span 1;}
+  .grid-cols-3 .col-span-2 table{min-width:640px;}
+  .grid-cols-3 .col-span-2{width:100%;}
+}
