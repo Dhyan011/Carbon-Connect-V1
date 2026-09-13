@@ -1,0 +1,525 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+enum OrganizationType {
+  BUYER
+  SELLER
+  BUYER_SELLER
+  VERIFIER
+  LOGISTICS
+  ADMIN
+}
+enum MembershipRole {
+  BUYER_ADMIN
+  BUYER_MEMBER
+  SELLER_ADMIN
+  SELLER_MEMBER
+  VERIFIER
+  LOGISTICS_OPERATOR
+  PLATFORM_ADMIN
+  READ_ONLY_AUDITOR
+}
+enum OrganizationStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  REJECTED
+}
+enum RfqStatus {
+  DRAFT
+  PUBLISHED
+  BIDS_RECEIVED
+  SHORTLISTED
+  AWARDED
+  CLOSED
+  CANCELLED
+}
+enum BidStatus {
+  DRAFT
+  SUBMITTED
+  SHORTLISTED
+  AWARDED
+  DECLINED
+  WITHDRAWN
+  EXPIRED
+}
+enum ListingStatus {
+  DRAFT
+  PUBLISHED
+  PAUSED
+  SOLD_OUT
+  ARCHIVED
+}
+enum DocumentStatus {
+  PENDING
+  UNDER_REVIEW
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+enum ContractStatus {
+  DRAFT
+  PENDING_SIGNATURES
+  PARTIALLY_SIGNED
+  SIGNED
+  CANCELLED
+  COMPLETED
+}
+enum AwardStatus {
+  ACTIVE
+  CANCELLED
+}
+enum PaymentStatus {
+  PENDING
+  INITIATED
+  PAID
+  FAILED
+  REFUNDED
+}
+enum ShipmentStatus {
+  PLANNED
+  DISPATCHED
+  IN_TRANSIT
+  ARRIVED
+  ACCEPTED
+  REJECTED
+  DELIVERED
+}
+enum QualityStatus {
+  PENDING
+  UNDER_REVIEW
+  VERIFIED
+  REJECTED
+}
+enum ComplianceStatus {
+  NOT_ASSESSED
+  IN_REVIEW
+  ACKNOWLEDGED
+  VERIFIED_FOR_RECORD
+  EXPIRED
+  REQUIRES_OFFICIAL_REVIEW
+}
+enum DataStatus {
+  MEASURED
+  ESTIMATED
+  VERIFIED
+}
+
+model User {
+  id                 String                 @id @default(cuid())
+  email              String                 @unique
+  passwordHash       String
+  firstName          String?
+  lastName           String?
+  phone              String?
+  status             UserStatus             @default(PENDING)
+  emailVerifiedAt    DateTime?
+  lastLoginAt        DateTime?
+  memberships        OrganizationMembership[]
+  auditLogs          AuditLog[]
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+}
+
+model Organization {
+  id                 String                 @id @default(cuid())
+  legalName          String
+  displayName        String?
+  type               OrganizationType
+  gstin              String?
+  cin                String?
+  registeredAddress  String?
+  state              String?
+  city               String?
+  country            String                 @default("IN")
+  contactEmail       String?
+  contactPhone       String?
+  status             OrganizationStatus     @default(PENDING)
+  memberships        OrganizationMembership[]
+  facilities         Facility[]
+  listings           Listing[]
+  buyerRfqs          Rfq[]                  @relation("BuyerRfqs")
+  sellerBids         Bid[]                  @relation("SellerBids")
+  buyerAwards        Award[]                @relation("BuyerAwards")
+  sellerAwards       Award[]                @relation("SellerAwards")
+  buyerContracts     Contract[]             @relation("BuyerContracts")
+  sellerContracts    Contract[]             @relation("SellerContracts")
+  documents          Document[]
+  mrvRecords         MrvRecord[]
+  complianceRecords  ComplianceContextRecord[]
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+}
+
+model OrganizationMembership {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  role           MembershipRole
+  status         UserStatus   @default(ACTIVE)
+  invitedBy      String?
+  joinedAt       DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([organizationId, userId])
+}
+
+model Facility {
+  id                    String       @id @default(cuid())
+  organizationId        String
+  name                  String
+  facilityType          String
+  address               String?
+  state                 String?
+  city                  String?
+  latitude              Decimal?     @db.Decimal(10, 7)
+  longitude             Decimal?     @db.Decimal(10, 7)
+  captureTechnology     String?
+  annualCapacityTonnes  Decimal?     @db.Decimal(14, 3)
+  operatingStatus       String?
+  documentationStatus   String?
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  listings              Listing[]
+  shipmentsOrigin       Shipment[]   @relation("OriginFacility")
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+}
+
+model Listing {
+  id                    String        @id @default(cuid())
+  listingCode           String        @unique
+  organizationId        String
+  facilityId            String
+  title                 String
+  grade                 String
+  purityMinimum         Decimal       @db.Decimal(8, 4)
+  physicalState         String
+  temperature           String?
+  pressure              String?
+  availableQuantityTonnes Decimal      @db.Decimal(14, 3)
+  minimumOrderTonnes    Decimal?       @db.Decimal(14, 3)
+  basePriceInrPerTonne  Decimal       @db.Decimal(14, 2)
+  availabilityStart    DateTime?
+  availabilityEnd      DateTime?
+  deliveryRadiusKm     Int?
+  deliveryTerms        String?
+  status                ListingStatus @default(DRAFT)
+  demoOnly              Boolean       @default(false)
+  organization          Organization  @relation(fields: [organizationId], references: [id])
+  facility              Facility      @relation(fields: [facilityId], references: [id])
+  bids                  Bid[]
+  documents             ListingDocument[]
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+}
+
+model Rfq {
+  id                    String        @id @default(cuid())
+  rfqCode               String        @unique
+  buyerOrganizationId   String
+  title                 String
+  description           String?
+  gradeRequired         String
+  minimumPurity         Decimal?      @db.Decimal(8, 4)
+  physicalState         String?
+  quantityTonnes        Decimal       @db.Decimal(14, 3)
+  quantityUnit          String         @default("tonnes")
+  deliveryStart         DateTime?
+  deliveryEnd           DateTime?
+  deliveryAddress       String
+  deliveryState         String?
+  deliveryCity          String?
+  budgetMinInrPerTonne  Decimal?      @db.Decimal(14, 2)
+  budgetMaxInrPerTonne  Decimal?      @db.Decimal(14, 2)
+  preferredDeliveryMode String?
+  utilizationType       String?
+  sourcePreference      String?
+  deadline              DateTime?
+  status                RfqStatus     @default(DRAFT)
+  publishedAt           DateTime?
+  closedAt              DateTime?
+  awardedBidId          String?
+  createdBy             String
+  buyerOrganization     Organization  @relation("BuyerRfqs", fields: [buyerOrganizationId], references: [id])
+  bids                  Bid[]
+  requirements          RfqRequirement[]
+  award                 Award?
+  contract              Contract?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  @@index([buyerOrganizationId, status])
+}
+
+model RfqRequirement {
+  id             String   @id @default(cuid())
+  rfqId          String
+  requirementType String
+  label          String
+  isRequired     Boolean  @default(false)
+  rfq            Rfq      @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+}
+
+model Bid {
+  id                    String        @id @default(cuid())
+  bidCode               String        @unique
+  rfqId                 String
+  sellerOrganizationId  String
+  listingId             String
+  quantityTonnes        Decimal       @db.Decimal(14, 3)
+  exWorksPriceInrPerTonne Decimal     @db.Decimal(14, 2)
+  logisticsPriceInrPerTonne Decimal?  @db.Decimal(14, 2)
+  deliveredPriceInrPerTonne Decimal   @db.Decimal(14, 2)
+  totalEstimatedValueInr Decimal      @db.Decimal(16, 2)
+  leadTimeBusinessDays  Int
+  validUntil            DateTime?
+  sellerNote            String?
+  evidenceSummary       String?
+  status                BidStatus     @default(DRAFT)
+  submittedAt          DateTime?
+  withdrawnAt           DateTime?
+  rfq                   Rfq           @relation(fields: [rfqId], references: [id])
+  sellerOrganization    Organization  @relation("SellerBids", fields: [sellerOrganizationId], references: [id])
+  listing               Listing       @relation(fields: [listingId], references: [id])
+  revisions             BidRevision[]
+  award                 Award?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  @@index([rfqId, status])
+}
+
+model BidRevision {
+  id             String   @id @default(cuid())
+  bidId          String
+  revisionNumber Int
+  payloadJson    Json
+  createdBy      String
+  createdAt      DateTime @default(now())
+  bid            Bid      @relation(fields: [bidId], references: [id], onDelete: Cascade)
+  @@unique([bidId, revisionNumber])
+}
+
+model Award {
+  id                    String        @id @default(cuid())
+  rfqId                 String        @unique
+  bidId                 String        @unique
+  buyerOrganizationId   String
+  sellerOrganizationId  String
+  awardedAt             DateTime      @default(now())
+  awardedBy             String
+  awardNote             String?
+  status                AwardStatus   @default(ACTIVE)
+  rfq                   Rfq           @relation(fields: [rfqId], references: [id])
+  bid                   Bid            @relation(fields: [bidId], references: [id])
+  buyerOrganization     Organization  @relation("BuyerAwards", fields: [buyerOrganizationId], references: [id])
+  sellerOrganization    Organization  @relation("SellerAwards", fields: [sellerOrganizationId], references: [id])
+}
+
+model Contract {
+  id                    String        @id @default(cuid())
+  contractCode          String        @unique
+  rfqId                 String        @unique
+  bidId                 String
+  buyerOrganizationId   String
+  sellerOrganizationId  String
+  status                ContractStatus @default(DRAFT)
+  termsJson             Json
+  buyerSignedAt         DateTime?
+  sellerSignedAt        DateTime?
+  signedDocumentId      String?
+  rfq                   Rfq           @relation(fields: [rfqId], references: [id])
+  buyerOrganization     Organization  @relation("BuyerContracts", fields: [buyerOrganizationId], references: [id])
+  sellerOrganization    Organization  @relation("SellerContracts", fields: [sellerOrganizationId], references: [id])
+  milestones            PaymentMilestone[]
+  shipments             Shipment[]
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+}
+
+model PaymentMilestone {
+  id                String        @id @default(cuid())
+  contractId        String
+  milestoneType     String
+  amountInr         Decimal       @db.Decimal(16, 2)
+  dueAt             DateTime?
+  status            PaymentStatus @default(PENDING)
+  providerReference String?
+  paidAt            DateTime?
+  contract          Contract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
+}
+
+model Shipment {
+  id                    String         @id @default(cuid())
+  contractId            String
+  shipmentCode          String         @unique
+  originFacilityId      String
+  destinationAddress    String
+  destinationCity       String?
+  destinationState      String?
+  carrierName           String?
+  vehicleOrContainerRef String?
+  deliveryMode          String?
+  status                ShipmentStatus @default(PLANNED)
+  plannedDispatchAt     DateTime?
+  estimatedArrivalAt    DateTime?
+  actualArrivalAt       DateTime?
+  contract              Contract       @relation(fields: [contractId], references: [id])
+  originFacility        Facility       @relation("OriginFacility", fields: [originFacilityId], references: [id])
+  events                ShipmentEvent[]
+  qualityRecords        QualityRecord[]
+  passports             DigitalPassport[]
+  mrvRecords            MrvRecord[]
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+}
+
+model ShipmentEvent {
+  id         String   @id @default(cuid())
+  shipmentId String
+  eventType  String
+  eventTime  DateTime @default(now())
+  location   String?
+  notes      String?
+  createdBy  String
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id               String         @id @default(cuid())
+  organizationId   String
+  uploadedBy       String
+  fileName         String
+  storageKey       String
+  mimeType         String
+  sizeBytes        Int
+  sha256           String
+  documentType     String
+  status           DocumentStatus @default(PENDING)
+  expiresAt        DateTime?
+  verifiedBy       String?
+  verifiedAt       DateTime?
+  verificationNotes String?
+  organization     Organization   @relation(fields: [organizationId], references: [id])
+  listingLinks     ListingDocument[]
+  createdAt        DateTime       @default(now())
+}
+
+model ListingDocument {
+  listingId  String
+  documentId String
+  documentType String
+  isRequired Boolean @default(false)
+  listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  document  Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  @@id([listingId, documentId])
+}
+
+model QualityRecord {
+  id               String        @id @default(cuid())
+  shipmentId       String
+  listingId        String
+  batchId          String?
+  analysisDate     DateTime
+  laboratoryName   String
+  purity           Decimal       @db.Decimal(8, 4)
+  physicalState    String
+  contaminantsJson Json
+  standardReference String?
+  status           QualityStatus @default(PENDING)
+  verifiedBy       String?
+  verifiedAt       DateTime?
+  notes            String?
+  shipment         Shipment      @relation(fields: [shipmentId], references: [id])
+}
+
+model DigitalPassport {
+  id                    String   @id @default(cuid())
+  passportCode          String   @unique
+  batchId               String?
+  shipmentId            String
+  puritySnapshot        Decimal  @db.Decimal(8, 4)
+  contaminantsSnapshotJson Json
+  custodyEventsJson     Json
+  documentsSnapshotJson  Json
+  utilizationType       String?
+  acceptanceStatus      String
+  issuedAt              DateTime @default(now())
+  issuedBy              String
+  revokedAt             DateTime?
+  revocationReason      String?
+  shipment              Shipment @relation(fields: [shipmentId], references: [id])
+}
+
+model MrvRecord {
+  id               String     @id @default(cuid())
+  organizationId   String
+  facilityId       String?
+  contractId       String?
+  shipmentId       String?
+  activityType     String
+  measurementType  String
+  value            Decimal    @db.Decimal(20, 6)
+  unit             String
+  methodology      String?
+  dataStatus       DataStatus
+  sourceDocumentId String?
+  reviewNotes      String?
+  organization     Organization @relation(fields: [organizationId], references: [id])
+  shipment         Shipment?  @relation(fields: [shipmentId], references: [id])
+  createdAt        DateTime   @default(now())
+}
+
+model ComplianceContextRecord {
+  id             String           @id @default(cuid())
+  organizationId String
+  framework      String
+  recordType     String
+  status         ComplianceStatus @default(NOT_ASSESSED)
+  referenceNumber String?
+  documentId     String?
+  effectiveFrom  DateTime?
+  effectiveUntil DateTime?
+  notes          String?
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id                  String   @id @default(cuid())
+  actorUserId         String?
+  actorOrganizationId String?
+  action              String
+  entityType          String
+  entityId            String
+  beforeJson          Json?
+  afterJson           Json?
+  ipAddress           String?
+  userAgent           String?
+  detail              Json?
+  actorUser           User?    @relation(fields: [actorUserId], references: [id])
+  createdAt           DateTime @default(now())
+  @@index([entityType, entityId])
+}
