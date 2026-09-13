@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { ArrowRight, CheckCircle2, LockKeyhole, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, CheckCircle2, LockKeyhole, ShieldCheck } from 'lucide-react';
 import { useApp } from '../context';
 import type { Role } from '../types';
 
@@ -28,10 +28,9 @@ export default function Login() {
       <div className="absolute bottom-0 left-0 right-0 h-56 bg-gradient-to-t from-[#102A1E]/80 to-transparent" />
       <button onClick={() => navigate('landing')} className="relative z-10 inline-flex self-start rounded-xl bg-white px-3 py-2.5 shadow-sm" aria-label="Go to CarbonConnect homepage"><img src="/carbon-connect-logo-transparent.png" alt="CarbonConnect" className="h-10 w-auto max-w-[210px] object-contain" /></button>
       <div className="relative z-10 max-w-lg">
-        <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#B9D0BC]/35 bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[.14em] text-[#EAF3EA]"><Sparkles size={13}/> Carbon-Connect workspace</div>
         <h2 className="max-w-md text-4xl font-semibold leading-[1.08] tracking-[-.04em]">Move captured carbon toward its next useful life.</h2>
         <p className="mt-5 max-w-md text-base leading-relaxed text-[#DDEADE]">A clearer operating layer for supply, demand, evidence, contracting and delivery.</p>
-        <div className="mt-9 grid grid-cols-3 gap-3 max-w-md"><div className="rounded-xl border border-white/15 bg-white/10 p-3"><div className="text-lg font-semibold text-white">01</div><div className="mt-1 text-xs leading-snug text-[#DDEADE]">Specify</div></div><div className="rounded-xl border border-white/15 bg-white/10 p-3"><div className="text-lg font-semibold text-white">02</div><div className="mt-1 text-xs leading-snug text-[#DDEADE]">Match</div></div><div className="rounded-xl border border-white/15 bg-white/10 p-3"><div className="text-lg font-semibold text-white">03</div><div className="mt-1 text-xs leading-snug text-[#DDEADE]">Move</div></div></div>
+        <div className="mt-9 flex max-w-md items-center gap-4 text-xs font-semibold uppercase tracking-[.14em] text-[#DDEADE]"><span>01 Specify</span><span className="h-px flex-1 bg-white/25"/><span>02 Match</span><span className="h-px flex-1 bg-white/25"/><span>03 Move</span></div>
       </div>
       <div className="relative z-10 flex items-center gap-5 text-xs font-medium text-[#DDEADE]"><span className="inline-flex items-center gap-2"><ShieldCheck size={16} className="text-[#B9D0BC]"/> Evidence-led workflows</span><span className="inline-flex items-center gap-2"><CheckCircle2 size={16} className="text-[#B9D0BC]"/> Demo environment</span></div>
     </aside>
