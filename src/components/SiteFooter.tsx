@@ -32,7 +32,7 @@ export default function SiteFooter() {
         <div>
           <h3 className="text-sm font-semibold text-white mb-4">Contact for inquiries</h3>
           <div className="space-y-3 text-sm">
-            <a href="mailto:pateldhyan011@gmail.com" className="flex items-center gap-2 text-[#D7E4D8] hover:text-white"><Mail size={16} className="text-[#B9D0BC] shrink-0"/> pateldhyan011@gmail.com</a>
+            <a href="mailto:info@carbonconnect.com" className="flex items-center gap-2 text-[#D7E4D8] hover:text-white"><Mail size={16} className="text-[#B9D0BC] shrink-0"/> info@carbonconnect.com</a>
             <a href="tel:+9194261417" className="flex items-center gap-2 text-[#D7E4D8] hover:text-white"><Phone size={16} className="text-[#B9D0BC] shrink-0"/> +91 94261417</a>
             <p className="text-xs leading-relaxed text-[#B9D0BC] pt-2">For supplier onboarding, buyer requirements, product questions and platform feedback, please contact our team.</p>
           </div>
