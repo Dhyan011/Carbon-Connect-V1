@@ -65,6 +65,15 @@ npm run test:api
 
 ## Deployment
 
+### Live deployments
+
+| Component | URL |
+|---|---|
+| Vercel frontend | https://carbon-connect-v1-omcrqobzu-dhyan011s-projects.vercel.app |
+| Render site | https://carbon-connect-web.onrender.com |
+
+The Vercel URL is currently protected by Vercel access control and returns a redirect to Vercel SSO when accessed without an authenticated session. The Render URL is publicly reachable and is the static-site deployment. A separate public Render Node API URL must be configured before the frontend can use PostgreSQL-backed RFQs, bids, and awards in production.
+
 ### Render API and database
 
 Use the repository’s `render.yaml` Blueprint, or create a Node web service with:
@@ -87,7 +96,7 @@ Build command: npm run build
 Output directory: dist
 ```
 
-Set `VITE_API_BASE_URL` to the public Render API URL. `vercel.json` provides the SPA fallback for direct navigation.
+Set `VITE_API_BASE_URL` to the public Render API URL and set Render `CORS_ORIGINS` to the Vercel frontend origin. `vercel.json` provides the SPA fallback for direct navigation.
 
 ## Production considerations
 
