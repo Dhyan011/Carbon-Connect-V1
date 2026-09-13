@@ -8,7 +8,7 @@ export default function SiteFooter() {
       <div className="grid md:grid-cols-[1.3fr_1fr_1fr_1.1fr] gap-10">
         <div>
           <button onClick={() => navigate('landing')} className="rounded-lg bg-white px-2 py-1.5 mb-5" aria-label="Go to CarbonConnect homepage"><img src="/carbon-connect-logo.jpg" alt="CarbonConnect" className="h-8 w-auto max-w-[175px] object-contain" /></button>
-          <p className="text-sm leading-relaxed text-[#D7E4D8] max-w-xs">Carbon-Connect is an India-first marketplace layer for discovering, specifying, contracting and moving physical CO₂.</p>
+          <p className="text-sm leading-relaxed text-[#D7E4D8] max-w-xs">Carbon-Connect is a marketplace layer for discovering, specifying, contracting and moving physical CO₂.</p>
           <p className="text-xs leading-relaxed text-[#B9D0BC] mt-4">Physical CO₂ transactions only. Carbon credits, offsets and certificates are separate instruments.</p>
         </div>
         <div>
@@ -24,7 +24,7 @@ export default function SiteFooter() {
         <div>
           <h3 className="text-sm font-semibold text-white mb-4">Company details</h3>
           <div className="space-y-3 text-sm text-[#D7E4D8]">
-            <div className="flex items-start gap-2"><MapPin size={16} className="text-[#B9D0BC] mt-0.5 shrink-0"/><span>India-first industrial marketplace<br/>Serving suppliers and utilization buyers</span></div>
+            <div className="flex items-start gap-2"><MapPin size={16} className="text-[#B9D0BC] mt-0.5 shrink-0"/><span>Industrial marketplace<br/>Serving suppliers and utilization buyers</span></div>
             <div className="flex items-center gap-2"><span className="text-[#B9D0BC] font-medium">Hours</span><span>Mon–Fri · 09:00–18:00 IST</span></div>
             <div className="flex items-center gap-2"><span className="text-[#B9D0BC] font-medium">Status</span><span>Demo environment</span></div>
           </div>
