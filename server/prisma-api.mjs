@@ -1,12 +1,10 @@
 import http from 'node:http';
 import { randomUUID } from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
-import { OAuth2Client } from 'google-auth-library';
 import { issueAccessToken, verifyAccessToken } from './auth.mjs';
 import { config } from './config.mjs';
 
 const prisma = new PrismaClient();
-const googleClient = new OAuth2Client(config.googleClientId || undefined);
 const port = config.port;
 const allowedOrigins = config.corsOrigins;
 function headers(req, res) { const origin = req.headers.origin; res.setHeader('access-control-allow-origin', allowedOrigins.includes('*') || allowedOrigins.includes(origin) ? (origin || '*') : allowedOrigins[0]); res.setHeader('vary', 'Origin'); res.setHeader('access-control-allow-headers', 'content-type, authorization, idempotency-key'); res.setHeader('access-control-allow-methods', 'GET,POST,PATCH,OPTIONS'); res.setHeader('content-type', 'application/json; charset=utf-8'); }
@@ -17,27 +15,6 @@ async function currentUser(req) { const claims = verifyAccessToken((req.headers.
 function membership(user, role) { return user?.memberships.find(item => item.role === role || (role === 'buyer' && item.role === 'BUYER_ADMIN') || (role === 'seller' && item.role === 'SELLER_ADMIN') || role === 'admin' && item.role === 'PLATFORM_ADMIN'); }
 function mapRfq(r) { return { id: r.rfqCode, title: r.title, buyer: r.buyerOrganization.displayName || r.buyerOrganization.legalName, buyerOrganizationId: r.buyerOrganizationId, grade: r.gradeRequired, quantity: `${r.quantityTonnes} t`, delivery: `${r.deliveryCity || ''}, ${r.deliveryState || ''}`, budget: `₹${r.budgetMinInrPerTonne || 0}–${r.budgetMaxInrPerTonne || 0}/t delivered`, status: r.status.toLowerCase().replace('_', '-'), bids: r.bids.length }; }
 function mapBid(b) { return { id: b.bidCode, rfqId: b.rfq.rfqCode, supplier: b.sellerOrganization.displayName || b.sellerOrganization.legalName, sellerOrganizationId: b.sellerOrganizationId, listing: b.listing.listingCode, quantity: `${b.quantityTonnes} t`, price: `₹${b.exWorksPriceInrPerTonne}/t`, delivered: `₹${b.deliveredPriceInrPerTonne}/t`, leadTime: `${b.leadTimeBusinessDays} business days`, evidence: b.evidenceSummary || 'Evidence under review', status: b.status.toLowerCase(), }; }
-function googleRoleDetails(role) { if (role === 'buyer') return { type: 'BUYER', membershipRole: 'BUYER_ADMIN' }; if (role === 'seller') return { type: 'SELLER', membershipRole: 'SELLER_ADMIN' }; return null; }
-async function authenticateGoogle(input) {
-  if (!config.googleClientId) throw Object.assign(new Error('Google OAuth is not configured.'), { code: 'GOOGLE_NOT_CONFIGURED' });
-  const details = googleRoleDetails(input.role);
-  if (!details || !input.credential) throw Object.assign(new Error('A valid buyer or seller Google credential is required.'), { code: 'INVALID_GOOGLE_CREDENTIAL' });
-  const ticket = await googleClient.verifyIdToken({ idToken: input.credential, audience: config.googleClientId });
-  const payload = ticket.getPayload();
-  if (!payload?.sub || !payload.email || payload.email_verified !== true) throw Object.assign(new Error('Google account email must be verified.'), { code: 'UNVERIFIED_GOOGLE_ACCOUNT' });
-  return prisma.$transaction(async tx => {
-    let user = await tx.user.findFirst({ where: { OR: [{ googleSub: payload.sub }, { email: payload.email.toLowerCase() }] }, include: { memberships: true } });
-    if (!user) {
-      const organization = await tx.organization.create({ data: { legalName: `${payload.name || payload.email.split('@')[0]} Workspace`, displayName: `${payload.given_name || payload.name || 'Google'}'s workspace`, type: details.type, contactEmail: payload.email.toLowerCase(), status: 'ACTIVE' } });
-      user = await tx.user.create({ data: { email: payload.email.toLowerCase(), googleSub: payload.sub, firstName: payload.given_name || null, lastName: payload.family_name || null, status: 'ACTIVE', emailVerifiedAt: new Date(), lastLoginAt: new Date(), memberships: { create: { organizationId: organization.id, role: details.membershipRole, status: 'ACTIVE' } } }, include: { memberships: true } });
-    } else {
-      user = await tx.user.update({ where: { id: user.id }, data: { googleSub: payload.sub, firstName: payload.given_name || user.firstName, lastName: payload.family_name || user.lastName, emailVerifiedAt: user.emailVerifiedAt || new Date(), lastLoginAt: new Date() }, include: { memberships: true } });
-    }
-    const match = user.memberships.find(m => m.role === details.membershipRole) || user.memberships[0];
-    if (!match) throw Object.assign(new Error('No organization membership is available for this account.'), { code: 'MEMBERSHIP_REQUIRED' });
-    return { user, role: input.role, organizationId: match.organizationId };
-  });
-}
 const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') { headers(req, res); res.statusCode = 204; return res.end(); }
   if (req.url === '/health') { try { await prisma.$queryRaw`SELECT 1`; return send(req, res, 200, { status: 'ok', service: 'carbon-connect-prisma-api', database: 'postgresql' }); } catch { return fail(req, res, 503, 'DATABASE_UNAVAILABLE', 'Database is not ready.'); } }
@@ -48,10 +25,6 @@ const server = http.createServer(async (req, res) => {
       if (!user || user.passwordHash !== input.password || !match) return fail(req, res, 401, 'INVALID_CREDENTIALS', 'Invalid credentials.');
       return send(req, res, 200, { token: issueAccessToken({ id: user.id, role: input.role, organizationId: match.organizationId }), user: { id: user.id, email: user.email, role: input.role, organizationId: match.organizationId } });
     }
-    if (req.url === '/api/v1/auth/google' && req.method === 'POST') {
-      const input = await readBody(req); const result = await authenticateGoogle(input);
-      return send(req, res, 200, { token: issueAccessToken({ id: result.user.id, role: result.role, organizationId: result.organizationId }), user: { id: result.user.id, email: result.user.email, role: result.role, organizationId: result.organizationId, firstName: result.user.firstName, lastName: result.user.lastName } });
-    }
     const user = await currentUser(req); if (!user) return fail(req, res, 401, 'UNAUTHENTICATED', 'A valid signed session is required.');
     if (req.url === '/api/v1/rfqs' && req.method === 'GET') { const rows = await prisma.rfq.findMany({ include: { buyerOrganization: true, bids: true }, orderBy: { createdAt: 'desc' } }); return send(req, res, 200, rows.map(mapRfq)); }
     if (req.url === '/api/v1/rfqs' && req.method === 'POST') { const m = membership(user, 'buyer'); if (!m) return fail(req, res, 403, 'FORBIDDEN', 'Buyer membership required.'); const input = await readBody(req); const created = await prisma.rfq.create({ data: { rfqCode: `CC-RFQ-${Date.now()}`, buyerOrganizationId: m.organizationId, createdBy: user.id, title: input.title, gradeRequired: input.grade || input.gradeRequired || 'Captured CO₂', quantityTonnes: Number(String(input.quantity || '0').replace(/[^0-9.]/g, '')), deliveryAddress: input.deliveryAddress || input.delivery || 'To be confirmed', deliveryCity: input.city || 'Mumbai', deliveryState: input.state || 'Maharashtra', status: 'PUBLISHED', publishedAt: new Date(), budgetMinInrPerTonne: Number(input.budgetMin || 0), budgetMaxInrPerTonne: Number(input.budgetMax || 0) }, include: { buyerOrganization: true, bids: true } }); return send(req, res, 201, mapRfq(created)); }
@@ -61,7 +34,7 @@ const server = http.createServer(async (req, res) => {
     const award = req.url.match(/^\/api\/v1\/rfqs\/([^/]+)\/award$/);
     if (award && req.method === 'POST') { const m = membership(user, 'buyer'); if (!m) return fail(req, res, 403, 'FORBIDDEN', 'Buyer membership required.'); const input = await readBody(req); const result = await prisma.$transaction(async tx => { const rfq = await tx.rfq.findUnique({ where: { rfqCode: award[1] }, include: { award: true } }); if (!rfq || rfq.buyerOrganizationId !== m.organizationId) throw new Error('FORBIDDEN'); if (rfq.award) return rfq.award; const bid = await tx.bid.findUnique({ where: { bidCode: input.bidId }, include: { sellerOrganization: true } }); if (!bid || bid.rfqId !== rfq.id || !['SUBMITTED', 'SHORTLISTED'].includes(bid.status)) throw new Error('BID_NOT_FOUND'); await tx.bid.updateMany({ where: { rfqId: rfq.id }, data: { status: 'DECLINED' } }); await tx.bid.update({ where: { id: bid.id }, data: { status: 'AWARDED' } }); await tx.rfq.update({ where: { id: rfq.id }, data: { status: 'AWARDED', awardedBidId: bid.id } }); return tx.award.create({ data: { rfqId: rfq.id, bidId: bid.id, buyerOrganizationId: m.organizationId, sellerOrganizationId: bid.sellerOrganizationId, awardedBy: user.id }, }); }); return send(req, res, 201, result); }
     return fail(req, res, 404, 'NOT_FOUND', 'API route not found.');
-  } catch (error) { if (error.code === 'P2002' && req.url.includes('/award')) { const code = req.url.match(/^\/api\/v1\/rfqs\/([^/]+)\/award$/)?.[1]; const existing = code ? await prisma.award.findFirst({ where: { rfq: { rfqCode: code } } }).catch(() => null) : null; if (existing) return send(req, res, 200, existing); } if (error.code === 'GOOGLE_NOT_CONFIGURED' || error.code === 'INVALID_GOOGLE_CREDENTIAL' || error.code === 'UNVERIFIED_GOOGLE_ACCOUNT' || error.code === 'MEMBERSHIP_REQUIRED') return fail(req, res, 400, error.code, error.message); if (error.message === 'FORBIDDEN') return fail(req, res, 403, 'FORBIDDEN', 'You do not have access to this organization or RFQ.'); if (error.message === 'BID_NOT_FOUND') return fail(req, res, 404, 'BID_NOT_FOUND', 'Bid not found or no longer active.'); console.error(error); return fail(req, res, 500, 'INTERNAL_ERROR', 'Unexpected server error.'); }
+  } catch (error) { if (error.code === 'P2002' && req.url.includes('/award')) { const code = req.url.match(/^\/api\/v1\/rfqs\/([^/]+)\/award$/)?.[1]; const existing = code ? await prisma.award.findFirst({ where: { rfq: { rfqCode: code } } }).catch(() => null) : null; if (existing) return send(req, res, 200, existing); } if (error.message === 'FORBIDDEN') return fail(req, res, 403, 'FORBIDDEN', 'You do not have access to this organization or RFQ.'); if (error.message === 'BID_NOT_FOUND') return fail(req, res, 404, 'BID_NOT_FOUND', 'Bid not found or no longer active.'); console.error(error); return fail(req, res, 500, 'INTERNAL_ERROR', 'Unexpected server error.'); }
 });
 server.listen(port, '0.0.0.0', () => console.log(`Carbon-Connect Prisma API listening on 0.0.0.0:${port}`));
 

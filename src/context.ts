@@ -7,7 +7,6 @@ interface AppContextType {
   role: Role;
   setRole: (r: Role) => void;
   authenticate: (r: Exclude<Role, null>, email?: string, password?: string) => void;
-  authenticateGoogle: (credential: string, r: Exclude<Role, null>) => Promise<void>;
   authenticated: boolean;
   userId: string | null;
   signOut: () => void;
@@ -27,7 +26,7 @@ interface AppContextType {
 }
 
 export const AppContext = createContext<AppContextType>({
-  screen: 'landing', navigate: () => {}, role: null, setRole: () => {}, authenticate: () => {}, authenticateGoogle: async () => {},
+  screen: 'landing', navigate: () => {}, role: null, setRole: () => {}, authenticate: () => {},
   authenticated: false, userId: null, signOut: () => {}, complianceAcknowledged: false,
   acknowledgeCompliance: () => {}, profile: {} as OrganizationProfile, setProfile: () => {},
   documents: [], addDocument: () => {}, removeDocument: () => {}, updateDocumentStatus: () => {}, rfqs: [], bids: [], submitRfq: () => {}, submitBid: () => {}, awardBid: () => {},

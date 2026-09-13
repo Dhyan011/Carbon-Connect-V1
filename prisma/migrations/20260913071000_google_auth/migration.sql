@@ -1,4 +1,0 @@
--- Add Google identity support without changing existing password accounts.
-ALTER TABLE "User" ALTER COLUMN "passwordHash" DROP NOT NULL;
-ALTER TABLE "User" ADD COLUMN "googleSub" TEXT;
-CREATE UNIQUE INDEX "User_googleSub_key" ON "User"("googleSub");

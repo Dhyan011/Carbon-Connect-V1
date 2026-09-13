@@ -10,7 +10,6 @@ export const config = Object.freeze({
   port: Number(process.env.PORT || process.env.API_PORT || 4000),
   corsOrigins: parseList(process.env.CORS_ORIGINS, ['*']),
   jwtAccessSecret: process.env.JWT_ACCESS_SECRET || 'carbon-connect-development-secret-change-me',
-  googleClientId: process.env.GOOGLE_CLIENT_ID || '',
 })
 
 export const isProduction = config.nodeEnv === 'production'

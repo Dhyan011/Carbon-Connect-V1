@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { AppContext } from './context';
 import type { Bid, DocumentStatus, OrganizationProfile, Rfq, Role, Screen, UploadedDocument } from './types';
 import { adminScreens, buyerScreens, demoBids, demoDocuments, demoProfile, demoRfqs, sellerScreens } from './types';
-import { awardBid as apiAwardBid, createBid as apiCreateBid, createRfq as apiCreateRfq, loadBids, loadRfqs, login as apiLogin, loginWithGoogle as apiLoginWithGoogle, setApiToken } from './lib/api';
+import { awardBid as apiAwardBid, createBid as apiCreateBid, createRfq as apiCreateRfq, loadBids, loadRfqs, login as apiLogin, setApiToken } from './lib/api';
 
 import Landing from './screens/Landing';
 import Resources from './screens/Resources';
@@ -91,7 +91,6 @@ export default function App() {
   function setRole(next: Role) { setRoleState(next); }
   async function completeAuthentication(next: Exclude<Role, null>, identity: string) { setRoleState(next); setUserId(identity); setAuthenticated(true); setScreen(homeForRole(next)); localStorage.setItem('carbon-connect-session', JSON.stringify({ userId: identity, role: next, compliance: complianceAcknowledged })); }
   async function authenticate(next: Exclude<Role, null>, email = `${next}@carbon-connect.demo`, password = 'demo-password') { try { const user = await apiLogin(email, password, next); await completeAuthentication(user.role, user.id || email.toLowerCase()); } catch { await completeAuthentication(next, `demo-${next}-${email.toLowerCase()}`); } }
-  async function authenticateGoogle(credential: string, next: Exclude<Role, null>) { const user = await apiLoginWithGoogle(credential, next); await completeAuthentication(user.role, user.id); }
   function acknowledgeCompliance() { setComplianceAcknowledged(true); localStorage.setItem('carbon-connect-session', JSON.stringify({ userId, role, compliance: true })); }
   function navigate(next: Screen) {
     const protectedScreen = next !== 'landing' && next !== 'login' && next !== 'role-selection' && next !== 'registration' && next !== 'terms' && next !== 'privacy';
@@ -114,5 +113,5 @@ export default function App() {
   function submitBid(bid: Bid) { apiCreateBid(bid.rfqId, bid).then(saved => { saveBids([saved, ...bids.filter(b => b.id !== saved.id)]); saveRfqs(rfqs.map(r => r.id === bid.rfqId ? { ...r, status: 'bids-received', bids: r.bids + 1 } : r)); }).catch(() => { saveBids([bid, ...bids]); saveRfqs(rfqs.map(r => r.id === bid.rfqId ? { ...r, status: 'bids-received', bids: r.bids + 1 } : r)); }); }
   function awardBid(bidId: string, rfqId: string) { apiAwardBid(rfqId, bidId).then(() => { saveBids(bids.map(b => b.rfqId === rfqId ? { ...b, status: b.id === bidId ? 'awarded' : 'declined' } : b)); saveRfqs(rfqs.map(r => r.id === rfqId ? { ...r, status: 'awarded' } : r)); }).catch(() => { saveBids(bids.map(b => b.rfqId === rfqId ? { ...b, status: b.id === bidId ? 'awarded' : 'declined' } : b)); saveRfqs(rfqs.map(r => r.id === rfqId ? { ...r, status: 'awarded' } : r)); }); }
 
-  return <AppContext.Provider value={{ screen, navigate, role, setRole, authenticate, authenticateGoogle, authenticated, userId, signOut, complianceAcknowledged, acknowledgeCompliance, profile, setProfile: updateProfile, documents, addDocument, removeDocument, updateDocumentStatus, rfqs, bids, submitRfq, submitBid, awardBid }}><div className="ambient-scene" aria-hidden="true"><div className="ambient-orb ambient-orb-one"/><div className="ambient-orb ambient-orb-two"/></div><div className="app-layer animate-fade-in-up">{renderScreen(screen)}</div></AppContext.Provider>;
+  return <AppContext.Provider value={{ screen, navigate, role, setRole, authenticate, authenticated, userId, signOut, complianceAcknowledged, acknowledgeCompliance, profile, setProfile: updateProfile, documents, addDocument, removeDocument, updateDocumentStatus, rfqs, bids, submitRfq, submitBid, awardBid }}><div className="ambient-scene" aria-hidden="true"><div className="ambient-orb ambient-orb-one"/><div className="ambient-orb ambient-orb-two"/></div><div className="app-layer animate-fade-in-up">{renderScreen(screen)}</div></AppContext.Provider>;
 }

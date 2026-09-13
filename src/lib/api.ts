@@ -17,10 +17,6 @@ export async function login(email: string, password: string, role: Exclude<Role,
   const result = await request<{ token: string; user: { id: string; role: Exclude<Role, null> } }>('/auth/login', { method: 'POST', body: JSON.stringify({ email, password, role }) });
   setApiToken(result.token); return result.user;
 }
-export async function loginWithGoogle(credential: string, role: Exclude<Role, null>) {
-  const result = await request<{ token: string; user: { id: string; email: string; role: Exclude<Role, null>; organizationId: string; firstName?: string | null; lastName?: string | null } }>('/auth/google', { method: 'POST', body: JSON.stringify({ credential, role }) });
-  setApiToken(result.token); return result.user;
-}
 export async function loadRfqs() { return request<Rfq[]>('/rfqs'); }
 export async function createRfq(input: Partial<Rfq>) { return request<Rfq>('/rfqs', { method: 'POST', body: JSON.stringify(input) }); }
 export async function loadBids(rfqId: string) { return request<Bid[]>(`/rfqs/${rfqId}/bids`); }

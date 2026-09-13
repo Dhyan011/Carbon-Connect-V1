@@ -120,8 +120,7 @@ enum DataStatus {
 model User {
   id                 String                 @id @default(cuid())
   email              String                 @unique
-  googleSub          String?                @unique
-  passwordHash       String?
+  passwordHash       String
   firstName          String?
   lastName           String?
   phone              String?

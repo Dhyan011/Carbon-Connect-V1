@@ -1,10 +1,8 @@
 # Carbon-Connect
 
-Carbon-Connect is a carbon capture-to-product marketplace for the circular carbon ecosystem. It connects industrial CO₂ emitters with companies that can use captured carbon in concrete, fuels, chemicals, greenhouses, algae cultivation, and other productive pathways.
+Carbon-Connect is a capture-to-product marketplace for the circular carbon ecosystem. It connects industrial CO₂ emitters with companies that can use captured carbon in concrete, fuels, chemicals, greenhouses, algae cultivation, and other productive pathways.
 
 ## Product workflow
-
-The application demonstrates the full marketplace lifecycle:
 
 1. Emitters publish captured CO₂ supply with volume, purity, location, physical state, availability, and pricing.
 2. Buyers discover supply through marketplace filters and create requirements or RFQs.
@@ -14,30 +12,28 @@ The application demonstrates the full marketplace lifecycle:
 
 ## Architecture
 
-The project is a Vite + React + TypeScript frontend backed by a Node.js API and Prisma PostgreSQL database.
+The application is a Vite + React + TypeScript frontend backed by a Node.js API and Prisma PostgreSQL database.
+
+```mermaid
+flowchart LR
+    U[Buyer / Seller / Admin] --> V[Vercel React Frontend]
+    V -->|HTTPS JSON API| A[Render Node.js API]
+    A --> P[(Render PostgreSQL)]
+    A --> T[Signed session token]
+    V --> L[User-scoped browser persistence]
+    A --> M[RFQs, bids, awards, organizations]
+    A --> H[/health]
+```
 
 | Layer | Implementation |
 |---|---|
 | Frontend | React, Vite, TypeScript, Tailwind CSS |
 | API | Node.js HTTP server in `server/prisma-api.mjs` |
 | Database | PostgreSQL through Prisma |
-| Authentication | Signed Carbon-Connect sessions plus Google OAuth ID-token verification |
-| Hosting | Vercel or Render frontend, Render API and PostgreSQL |
+| Authentication | Existing signed Carbon-Connect sessions and demo/password accounts |
+| Hosting | Vercel frontend, Render API, Render PostgreSQL |
 
-The API is the source of truth for RFQs, bids, and awards. The frontend additionally stores user-scoped profile, document, and fallback demo state under keys containing the authenticated user ID so different users do not share browser-local changes.
-
-## Google authentication
-
-Google sign-in is available for buyer and seller accounts. The API verifies Google credentials server-side, creates or reuses the user, creates a workspace membership for first-time users, and issues the normal Carbon-Connect session token.
-
-Set these variables in the API and frontend environments:
-
-```env
-GOOGLE_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
-VITE_GOOGLE_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
-```
-
-Create a Google OAuth 2.0 Web application client and add every deployed frontend origin to Authorized JavaScript origins. The Google client ID is public; never add a Google client secret to the frontend or repository. See [`GOOGLE_AUTH.md`](./GOOGLE_AUTH.md) for the complete setup guide.
+The API is the source of truth for RFQs, bids, and awards. The frontend stores user-scoped profile, document, RFQ, and bid fallback state under keys containing the authenticated user ID so different browser users do not share local changes.
 
 ## Local development
 
@@ -56,7 +52,7 @@ npm run db:migrate:deploy
 npm run api
 ```
 
-The frontend uses `VITE_API_BASE_URL` to locate the API. Demo password login remains available when Google OAuth variables are not configured.
+The frontend uses `VITE_API_BASE_URL` to locate the API. Demo password login remains available for local and hackathon testing.
 
 ## Validation
 
@@ -69,7 +65,21 @@ npm run test:api
 
 ## Deployment
 
-The repository includes `render.yaml`, `vercel.json`, Dockerfiles, and the deployment guide. Render can provision the Prisma API and PostgreSQL database from the Blueprint. Vercel can host the static frontend with:
+### Render API and database
+
+Use the repository’s `render.yaml` Blueprint, or create a Node web service with:
+
+```text
+Build command: npm ci && npx prisma generate && npx prisma migrate deploy
+Start command: npm run api
+Health check: /health
+```
+
+Set `NODE_ENV=production`, `DATABASE_URL`, `JWT_ACCESS_SECRET`, and `CORS_ORIGINS`. Configure `CORS_ORIGINS` with the exact Vercel production origin.
+
+### Vercel frontend
+
+Create a Vercel project from this repository with:
 
 ```text
 Install command: npm ci
@@ -77,10 +87,8 @@ Build command: npm run build
 Output directory: dist
 ```
 
-Set `VITE_API_BASE_URL` to the deployed API URL and restrict API `CORS_ORIGINS` to the deployed frontend origin. Set both Google OAuth variables before building the frontend and starting the API.
-
-See [`DEPLOYMENT.md`](./DEPLOYMENT.md) and [`ARCHITECTURE.md`](./ARCHITECTURE.md) for operational details.
+Set `VITE_API_BASE_URL` to the public Render API URL. `vercel.json` provides the SPA fallback for direct navigation.
 
 ## Production considerations
 
-The current application is designed for a hackathon demonstration and should receive a security review before handling real commercial data. Production hardening should include password hashing for legacy password accounts, organization-level authorization review, document storage and malware scanning, payment-provider integration, audit-log retention, database backups, rate limiting, and approved legal/privacy policies.
+The application is designed for a hackathon demonstration and should receive a security review before handling real commercial data. Production hardening should include password hashing for legacy password accounts, organization-level authorization review, document storage and malware scanning, payment-provider integration, audit-log retention, database backups, rate limiting, and approved legal/privacy policies.
