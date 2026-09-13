@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import { issueAccessToken, verifyAccessToken } from './auth.mjs';
+const buyer = { id: 'buyer-1', role: 'buyer', organizationId: 'org-buyer' };
+const seller = { id: 'seller-1', role: 'seller', organizationId: 'org-seller' };
+const buyerToken = issueAccessToken(buyer);
+const sellerToken = issueAccessToken(seller);
+assert.deepEqual(verifyAccessToken(buyerToken).sub, buyer.id);
+assert.deepEqual(verifyAccessToken(sellerToken).organizationId, seller.organizationId);
+assert.equal(verifyAccessToken(`${buyerToken}tampered`), null);
+assert.equal(verifyAccessToken('not-a-token'), null);
+console.log('Multi-server auth test passed: independently verifiable buyer and seller tokens, tamper rejection.');

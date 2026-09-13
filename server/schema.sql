@@ -1,0 +1,9 @@
+-- Carbon-Connect production migration blueprint.
+-- The local demo server persists the same logical records in server/data.json.
+CREATE TABLE organizations (id TEXT PRIMARY KEY, name TEXT NOT NULL, role TEXT NOT NULL, city TEXT, state TEXT, created_at TIMESTAMPTZ DEFAULT now());
+CREATE TABLE users (id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, role TEXT NOT NULL, organization_id TEXT NOT NULL REFERENCES organizations(id), created_at TIMESTAMPTZ DEFAULT now());
+CREATE TABLE rfqs (id TEXT PRIMARY KEY, title TEXT NOT NULL, buyer_organization_id TEXT NOT NULL REFERENCES organizations(id), grade TEXT NOT NULL, quantity TEXT NOT NULL, delivery TEXT NOT NULL, budget TEXT, status TEXT NOT NULL, bids INTEGER NOT NULL DEFAULT 0, awarded_bid_id TEXT, created_at TIMESTAMPTZ DEFAULT now(), updated_at TIMESTAMPTZ DEFAULT now());
+CREATE TABLE bids (id TEXT PRIMARY KEY, rfq_id TEXT NOT NULL REFERENCES rfqs(id), seller_organization_id TEXT NOT NULL REFERENCES organizations(id), listing TEXT NOT NULL, quantity TEXT NOT NULL, price TEXT NOT NULL, delivered TEXT NOT NULL, lead_time TEXT NOT NULL, evidence TEXT NOT NULL, status TEXT NOT NULL, created_at TIMESTAMPTZ DEFAULT now());
+CREATE UNIQUE INDEX one_active_bid_per_seller_rfq ON bids(rfq_id, seller_organization_id) WHERE status IN ('submitted','shortlisted');
+CREATE TABLE awards (id TEXT PRIMARY KEY, rfq_id TEXT UNIQUE NOT NULL REFERENCES rfqs(id), bid_id TEXT UNIQUE NOT NULL REFERENCES bids(id), buyer_organization_id TEXT NOT NULL REFERENCES organizations(id), seller_organization_id TEXT NOT NULL REFERENCES organizations(id), status TEXT NOT NULL, awarded_at TIMESTAMPTZ DEFAULT now());
+CREATE TABLE audit_logs (id TEXT PRIMARY KEY, actor_user_id TEXT, actor_organization_id TEXT, action TEXT NOT NULL, entity_type TEXT NOT NULL, entity_id TEXT NOT NULL, detail JSONB NOT NULL DEFAULT '{}', created_at TIMESTAMPTZ DEFAULT now());

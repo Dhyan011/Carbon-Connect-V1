@@ -1,0 +1,132 @@
+{
+  "organizations": [
+    {
+      "id": "org-buyer-demo",
+      "name": "Maharashtra Concrete Systems",
+      "role": "buyer",
+      "city": "Mumbai",
+      "state": "Maharashtra"
+    },
+    {
+      "id": "org-seller-demo",
+      "name": "Kutch Industrial Materials Pvt. Ltd.",
+      "role": "seller",
+      "city": "Mundra",
+      "state": "Gujarat"
+    },
+    {
+      "id": "org-admin-demo",
+      "name": "Carbon-Connect Platform",
+      "role": "admin",
+      "city": "Ahmedabad",
+      "state": "Gujarat"
+    }
+  ],
+  "users": [
+    {
+      "id": "user-buyer-demo",
+      "email": "buyer@carbon-connect.demo",
+      "password": "demo-password",
+      "role": "buyer",
+      "organizationId": "org-buyer-demo"
+    },
+    {
+      "id": "user-seller-demo",
+      "email": "seller@carbon-connect.demo",
+      "password": "demo-password",
+      "role": "seller",
+      "organizationId": "org-seller-demo"
+    },
+    {
+      "id": "user-admin-demo",
+      "email": "admin@carbon-connect.demo",
+      "password": "demo-password",
+      "role": "admin",
+      "organizationId": "org-admin-demo"
+    }
+  ],
+  "rfqs": [
+    {
+      "id": "CC-RFQ-2041",
+      "title": "Q4 2026 Concrete Mineralization",
+      "buyer": "Maharashtra Concrete Systems",
+      "buyerOrganizationId": "org-buyer-demo",
+      "grade": "Captured CO₂ ≥95%",
+      "quantity": "3,200 t",
+      "delivery": "Oct–Dec 2026 · Mumbai",
+      "budget": "₹67–80/t delivered",
+      "status": "awarded",
+      "bids": 2,
+      "createdAt": "2026-09-10T09:00:00.000Z",
+      "awardedBidId": "CC-BID-7012"
+    },
+    {
+      "id": "CC-RFQ-2039",
+      "title": "Food Carbonation — Winter Stock",
+      "buyer": "Maharashtra Concrete Systems",
+      "buyerOrganizationId": "org-buyer-demo",
+      "grade": "Food Grade ≥99.9%",
+      "quantity": "400 t",
+      "delivery": "Nov 2026 · Mumbai",
+      "budget": "₹140–165/t delivered",
+      "status": "open",
+      "bids": 0,
+      "createdAt": "2026-09-11T09:00:00.000Z"
+    }
+  ],
+  "bids": [
+    {
+      "id": "CC-BID-7012",
+      "rfqId": "CC-RFQ-2041",
+      "supplier": "Kutch Industrial Materials Pvt. Ltd.",
+      "sellerOrganizationId": "org-seller-demo",
+      "listing": "CC-L-4820 · Industrial Grade CO₂",
+      "quantity": "3,200 t",
+      "price": "₹72/t",
+      "delivered": "₹78/t",
+      "leadTime": "5 business days",
+      "evidence": "4 verified documents",
+      "status": "awarded",
+      "createdAt": "2026-09-11T11:00:00.000Z"
+    },
+    {
+      "id": "CC-BID-7013",
+      "rfqId": "CC-RFQ-2041",
+      "supplier": "Deccan Metals (demo)",
+      "sellerOrganizationId": "org-seller-alt",
+      "listing": "CC-L-4815 · Captured CO₂",
+      "quantity": "3,200 t",
+      "price": "₹69/t",
+      "delivered": "₹81/t",
+      "leadTime": "8 business days",
+      "evidence": "3 verified documents",
+      "status": "declined",
+      "createdAt": "2026-09-11T12:00:00.000Z"
+    }
+  ],
+  "awards": [
+    {
+      "id": "CC-AWARD-1789259155168",
+      "rfqId": "CC-RFQ-2041",
+      "bidId": "CC-BID-7012",
+      "buyerOrganizationId": "org-buyer-demo",
+      "sellerOrganizationId": "org-seller-demo",
+      "status": "active",
+      "awardedAt": "2026-09-13T00:25:55.168Z"
+    }
+  ],
+  "audit": [
+    {
+      "id": "4a640ed7-b25e-408a-a5f9-012448d5d640",
+      "actorUserId": "user-buyer-demo",
+      "actorOrganizationId": "org-buyer-demo",
+      "action": "bid.awarded",
+      "entityType": "award",
+      "entityId": "CC-AWARD-1789259155168",
+      "detail": {
+        "bidId": "CC-BID-7012"
+      },
+      "createdAt": "2026-09-13T00:25:55.168Z"
+    }
+  ]
+}
